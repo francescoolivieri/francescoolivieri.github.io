@@ -240,7 +240,7 @@
     <div class="controls">
       <div class="sliderwrap">
         <label for="speed"><strong>Your Guess: Sediment Sound Speed</strong></label>
-        <input id="speed" type="range" min="1450" max="1800" step="1" value="1625">
+        <input id="speed" type="range" min="1450" max="1800" step="25" value="1625">
       </div>
       <div class="value">
         <span id="speedVal">1625</span> m/s
@@ -354,8 +354,7 @@
       
       status.className = 'status attempts';
       status.innerHTML = `
-        <strong>Not quite!</strong> Your guess: ${guess} m/s (off by ${difference} m/s)<br>
-        ${hint} | Attempts: ${attempts.length}
+        <strong>Not quite!</strong> Your guess: ${guess} m/s, try another! | Attempts: ${attempts.length}
       `;
       status.style.display = 'block';
     }
