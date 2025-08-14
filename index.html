@@ -3,13 +3,15 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Underwater TL Match – Guess the Sediment Speed</title>
+<title>Could you beat a UKF filter?</title>
 <style>
   :root {
     --deep: #001a33;
     --mid: #003d66;
     --light: #4da6ff;
     --accent: #00d4ff;
+    --success: #00ff88;
+    --warning: #ffaa00;
   }
   * { box-sizing: border-box; }
   body {
@@ -39,240 +41,341 @@
   }
   h1 {
     margin: 0 0 6px 0;
-    font-size: clamp(24px, 5vw, 44px);
+    font-size: clamp(28px, 6vw, 48px);
     letter-spacing: 0.5px;
+    background: linear-gradient(135deg, var(--accent), var(--success));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
   p.sub {
     margin: 0;
     opacity: 0.9;
+    font-size: 18px;
   }
 
   .container {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
     padding: 16px;
     display: grid;
-    grid-template-columns: 1fr 320px;
+    grid-template-columns: 1fr;
     gap: 18px;
   }
   .card {
     background: rgba(0, 0, 0, 0.25);
     border: 1px solid rgba(255,255,255,0.12);
     border-radius: 16px;
-    padding: 16px;
+    padding: 20px;
     backdrop-filter: blur(6px);
     box-shadow: 0 10px 30px rgba(0,0,0,0.25);
   }
   .game {
     display: grid;
     grid-template-rows: auto auto auto;
-    gap: 14px;
+    gap: 20px;
   }
   .preview {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 10px;
+    gap: 15px;
     place-items: center;
   }
   .preview img {
     width: 100%;
-    max-width: 900px;
+    max-width: 800px;
     border-radius: 12px;
     border: 2px solid rgba(255,255,255,0.2);
     background: #001a33;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .target-label {
+    font-size: 20px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 10px;
   }
   .controls {
     display: grid;
     grid-template-columns: 1fr auto;
-    gap: 10px;
+    gap: 15px;
     align-items: center;
   }
   .sliderwrap {
-    padding: 10px 12px;
-    background: rgba(0,0,0,0.25);
-    border: 1px solid rgba(255,255,255,0.12);
+    padding: 15px 18px;
+    background: rgba(0,0,0,0.3);
+    border: 2px solid rgba(255,255,255,0.15);
     border-radius: 12px;
+  }
+  .sliderwrap label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 16px;
   }
   input[type="range"] {
     width: 100%;
+    height: 8px;
+    -webkit-appearance: none;
+    background: rgba(255,255,255,0.2);
+    border-radius: 4px;
+    outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    background: var(--accent);
+    border-radius: 50%;
+    cursor: pointer;
   }
   .value {
-    min-width: 140px;
+    min-width: 160px;
     text-align: right;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
+    font-size: 18px;
   }
   .actions {
     display: flex;
-    gap: 10px;
+    gap: 15px;
     flex-wrap: wrap;
+    align-items: center;
   }
   button {
     background: linear-gradient(135deg, var(--accent), #2ecfff);
     color: #002233;
     border: none;
-    padding: 10px 14px;
+    padding: 12px 20px;
     border-radius: 10px;
     font-weight: 700;
     cursor: pointer;
     box-shadow: 0 6px 16px rgba(0, 212, 255, 0.3);
+    font-size: 16px;
+    transition: all 0.2s ease;
+  }
+  button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 212, 255, 0.4);
   }
   button.secondary {
     background: transparent;
     color: white;
-    border: 1px solid rgba(255,255,255,0.3);
+    border: 2px solid rgba(255,255,255,0.3);
+  }
+  button.success {
+    background: linear-gradient(135deg, var(--success), #44ffaa);
   }
 
-  /* Sidebar */
-  .sidebar h2 {
-    margin-top: 0;
-    font-size: 22px;
+  .status {
+    font-size: 18px;
+    font-weight: 600;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
   }
-  table {
+  .status.success {
+    background: rgba(0, 255, 136, 0.2);
+    color: var(--success);
+    border: 1px solid rgba(0, 255, 136, 0.3);
+  }
+  .status.attempts {
+    background: rgba(255, 170, 0, 0.2);
+    color: var(--warning);
+    border: 1px solid rgba(255, 170, 0, 0.3);
+  }
+
+  /* History section */
+  .history {
+    margin-top: 20px;
+  }
+  .history h3 {
+    margin: 0 0 15px 0;
+    font-size: 20px;
+    color: var(--warning);
+  }
+  .history-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+  }
+  .history-item {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 170, 0, 0.2);
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+  }
+  .history-item img {
     width: 100%;
-    border-collapse: collapse;
-    margin-top: 8px;
-    font-size: 14px;
+    border-radius: 6px;
+    margin-bottom: 8px;
   }
-  th, td {
-    text-align: left;
-    padding: 8px 6px;
-    border-bottom: 1px solid rgba(255,255,255,0.12);
+  .history-item .speed {
+    font-weight: 600;
+    color: var(--warning);
   }
-  th {
-    opacity: 0.9;
-  }
-  .tiny {
-    opacity: 0.9;
-    font-size: 12px;
-  }
+
   .footer {
     text-align: center;
-    padding: 10px;
+    padding: 20px;
     opacity: 0.8;
-    font-size: 12px;
+    font-size: 14px;
   }
 </style>
 </head>
 <body>
 <div class="rays"></div>
 <header>
-  <h1>Underwater TL Match</h1>
-  <p class="sub">Adjust the sediment sound speed to match the hidden scenario. Lock your guess and climb the leaderboard!</p>
+  <h1>Could you beat a UKF filter?</h1>
+  <p class="sub">Match the transmission loss pattern by guessing the correct sediment sound speed!</p>
 </header>
 
 <div class="container">
   <section class="card game">
     <div class="preview">
-      <img id="tlImg" alt="Transmission Loss Map" src="" />
+      <div class="target-label">🎯 Target Transmission Loss Pattern</div>
+      <img id="targetImg" alt="Target Transmission Loss Map" src="" />
     </div>
 
     <div class="controls">
       <div class="sliderwrap">
-        <label for="speed"><strong>Sediment Sound Speed</strong> (m/s)</label>
-        <input id="speed" type="range" min="1450" max="1800" step="1" value="1644">
+        <label for="speed"><strong>Your Guess: Sediment Sound Speed</strong></label>
+        <input id="speed" type="range" min="1450" max="1800" step="1" value="1625">
       </div>
       <div class="value">
-        <span id="speedVal">1644</span> m/s
+        <span id="speedVal">1625</span> m/s
       </div>
     </div>
 
     <div class="actions">
-      <button id="submitBtn">Submit Guess</button>
-      <button class="secondary" id="newRoundBtn">New Round</button>
-      <span id="roundMsg" class="tiny"></span>
+      <button id="guessBtn">Make Your Guess!</button>
+      <button class="secondary" id="newGameBtn">New Challenge</button>
+      <div id="status" class="status" style="display: none;"></div>
+    </div>
+
+    <div id="history" class="history" style="display: none;">
+      <h3>Your Previous Attempts</h3>
+      <div id="historyGrid" class="history-grid"></div>
     </div>
   </section>
-
-  <aside class="card sidebar">
-    <h2>Leaderboard (Local)</h2>
-    <p class="tiny">Sorted by smallest error (m/s). Stored in your browser.</p>
-    <table id="board">
-      <thead>
-        <tr><th>#</th><th>Name</th><th>Error (m/s)</th><th>Guess</th><th>Target</th></tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </aside>
 </div>
 
-<div class="footer tiny">Tip: Replace images in <code>assets/</code> with your Bellhop3D TL maps named like <code>tl_speed_XXXX.png</code>.</div>
+<div class="footer">
+  🧠 UKF filters use mathematical models to estimate sediment properties. Can your intuition beat the algorithm?
+</div>
 
 <script>
-  const speeds = [1450, 1488, 1527, 1566, 1605, 1644, 1683, 1722, 1761, 1800];
+  // Generate speed array from 1450 to 1800 with step 1
+  const speeds = [];
+  for (let i = 1450; i <= 1800; i++) {
+    speeds.push(i);
+  }
+  
   const imgForSpeed = (s) => `assets/tl_speed_${s}.png`;
 
-  const tlImg = document.getElementById('tlImg');
+  const targetImg = document.getElementById('targetImg');
   const slider = document.getElementById('speed');
   const speedVal = document.getElementById('speedVal');
-  const submitBtn = document.getElementById('submitBtn');
-  const newRoundBtn = document.getElementById('newRoundBtn');
-  const roundMsg = document.getElementById('roundMsg');
-
-  // Leaderboard (local)
-  const BOARD_KEY = 'ua_game_leaderboard_v1';
-  function loadBoard() {
-    try { return JSON.parse(localStorage.getItem(BOARD_KEY)) || []; }
-    catch (e) { return []; }
-  }
-  function saveBoard(rows) { localStorage.setItem(BOARD_KEY, JSON.stringify(rows)); }
-  function renderBoard() {
-    const rows = loadBoard().sort((a,b) => a.error - b.error).slice(0, 10);
-    const tbody = document.querySelector('#board tbody');
-    tbody.innerHTML = '';
-    rows.forEach((r, i) => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${i+1}</td><td>${r.name}</td><td>${r.error.toFixed(0)}</td><td>${r.guess}</td><td>${r.target}</td>`;
-      tbody.appendChild(tr);
-    });
-  }
-
-  // Snap to nearest available speed
-  function nearestSpeed(v) {
-    let best = speeds[0];
-    let bestd = Math.abs(v - best);
-    for (const s of speeds) {
-      const d = Math.abs(v - s);
-      if (d < bestd) { best = s; bestd = d; }
-    }
-    return best;
-  }
+  const guessBtn = document.getElementById('guessBtn');
+  const newGameBtn = document.getElementById('newGameBtn');
+  const status = document.getElementById('status');
+  const history = document.getElementById('history');
+  const historyGrid = document.getElementById('historyGrid');
 
   // Game state
-  let target = speeds[Math.floor(Math.random()*speeds.length)];
-  let current = nearestSpeed(parseInt(slider.value, 10));
-  function updateImage() {
-    current = nearestSpeed(parseInt(slider.value, 10));
+  let targetSpeed = 0;
+  let attempts = [];
+  let gameWon = false;
+
+  function updateSliderValue() {
+    const current = parseInt(slider.value, 10);
     speedVal.textContent = current;
-    tlImg.src = imgForSpeed(current);
   }
 
-  slider.addEventListener('input', updateImage);
+  function startNewGame() {
+    targetSpeed = speeds[Math.floor(Math.random() * speeds.length)];
+    attempts = [];
+    gameWon = false;
+    
+    targetImg.src = imgForSpeed(targetSpeed);
+    status.style.display = 'none';
+    history.style.display = 'none';
+    historyGrid.innerHTML = '';
+    guessBtn.textContent = 'Make Your Guess!';
+    guessBtn.className = '';
+    
+    // Reset slider to middle
+    slider.value = 1625;
+    updateSliderValue();
+    
+    console.log('New game started! Target speed:', targetSpeed); // For debugging
+  }
 
-  submitBtn.addEventListener('click', () => {
-    const guess = current;
-    const error = Math.abs(guess - target);
+  function addAttemptToHistory(guess) {
+    const historyItem = document.createElement('div');
+    historyItem.className = 'history-item';
+    historyItem.innerHTML = `
+      <img src="${imgForSpeed(guess)}" alt="Speed ${guess} m/s" />
+      <div class="speed">${guess} m/s</div>
+      <div class="tiny">Attempt ${attempts.length}</div>
+    `;
+    historyGrid.appendChild(historyItem);
+    history.style.display = 'block';
+  }
 
-    let name = prompt('Enter your name or nickname:');
-    if (!name) name = 'Anon';
+  function makeGuess() {
+    if (gameWon) return;
+    
+    const guess = parseInt(slider.value, 10);
+    attempts.push(guess);
+    
+    if (guess === targetSpeed) {
+      // Success!
+      gameWon = true;
+      status.className = 'status success';
+      status.innerHTML = `
+        🎉 <strong>Congratulations!</strong> You found it in ${attempts.length} attempt${attempts.length !== 1 ? 's' : ''}!<br>
+        The correct sediment sound speed was <strong>${targetSpeed} m/s</strong>
+      `;
+      status.style.display = 'block';
+      guessBtn.textContent = '🏆 You Won!';
+      guessBtn.className = 'success';
+    } else {
+      // Wrong guess - add to history
+      addAttemptToHistory(guess);
+      
+      const difference = Math.abs(guess - targetSpeed);
+      let hint = '';
+      if (guess < targetSpeed) {
+        hint = 'Try a higher speed! 📈';
+      } else {
+        hint = 'Try a lower speed! 📉';
+      }
+      
+      status.className = 'status attempts';
+      status.innerHTML = `
+        <strong>Not quite!</strong> Your guess: ${guess} m/s (off by ${difference} m/s)<br>
+        ${hint} | Attempts: ${attempts.length}
+      `;
+      status.style.display = 'block';
+    }
+  }
 
-    const row = { name, error, guess, target, ts: Date.now() };
-    const rows = loadBoard();
-    rows.push(row);
-    saveBoard(rows);
-    renderBoard();
-    roundMsg.textContent = `Your error: ${error.toFixed(0)} m/s (guess ${guess} vs target ${target}).`;
+  // Event listeners
+  slider.addEventListener('input', updateSliderValue);
+  guessBtn.addEventListener('click', makeGuess);
+  newGameBtn.addEventListener('click', startNewGame);
+
+  // Allow Enter key to make guess
+  document.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && !gameWon) {
+      makeGuess();
+    }
   });
 
-  newRoundBtn.addEventListener('click', () => {
-    target = speeds[Math.floor(Math.random()*speeds.length)];
-    roundMsg.textContent = 'New round started!';
-  });
-
-  // Init
-  target = speeds[Math.floor(Math.random()*speeds.length)];
-  renderBoard();
-  updateImage();
+  // Initialize game
+  startNewGame();
+  updateSliderValue();
 </script>
 </body>
 </html>
